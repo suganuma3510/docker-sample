@@ -1,0 +1,56 @@
+version: "3.9"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    ports:
+      - 8080:80
+    volumes:
+      - type: bind
+        source: ./laravel
+        target: /laravel
+    depends_on:
+      - app
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - type: bind
+        source: ./laravel
+        target: /laravel
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: laravel
+      DB_USERNAME: root
+      DB_PASSWORD: pass
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13.3
+    volumes:
+      - ./db/postgresql:/var/lib/postgresql
+      - ./db/init:/docker-entrypoint-initdb.d
+    ports:
+      - 15432:5432
+    environment:
+      TZ: Asia/Tokyo
+      POSTGRES_DB: postgre
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: pass
+
+  pgadmin4:
+    image: dpage/pgadmin4:4.2
+    ports:
+      - 8000:80
+    volumes:
+      - ./db/pgadmin4:/var/lib/pgadmin/storage
+    environment:
+      PGADMIN_DEFAULT_EMAIL: root
+      PGADMIN_DEFAULT_PASSWORD: pass
+    restart: always
